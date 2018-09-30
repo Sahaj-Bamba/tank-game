@@ -41,6 +41,12 @@ function startGame() {
     BT[3] = new units(tank_width, tank_height, "img/blue_tank3.png",Math.floor(w_ratio*(200+30)+sp*1),Math.floor(h_ratio*640)-sp/4, "image",3);
     BT[4] = new units(tank_width, tank_height, "img/blue_tank1.png",Math.floor(w_ratio*(200+30+40)+sp*3),Math.floor(h_ratio*640)-sp/4, "image",4);
 
+
+    RT[1] = new units(tank_width, tank_height, "img/red_tank2.png",Math.floor(w_ratio*(200-30-80)-sp*2),Math.floor(h_ratio*640)-sp/4, "image",1);
+    RT[2] = new units(tank_width, tank_height, "img/red_tank4.png",Math.floor(w_ratio*(200-30-40)-sp*1),Math.floor(h_ratio*640)-sp/4, "image",2);
+    RT[3] = new units(tank_width, tank_height, "img/red_tank3.png",Math.floor(w_ratio*(200+30)+sp*1),Math.floor(h_ratio*640)-sp/4, "image",3);
+    RT[4] = new units(tank_width, tank_height, "img/red_tank1.png",Math.floor(w_ratio*(200+30+40)+sp*3),Math.floor(h_ratio*640)-sp/4, "image",4);
+
     BC = new castle(Math.floor(w_ratio*60),Math.floor(h_ratio*70), "img/blue_castle.png",Math.floor(w_ratio*(170)),Math.floor(h_ratio*630));
     RC = new castle(Math.floor(w_ratio*60),Math.floor(h_ratio*70), "img/red_castle.png",Math.floor(w_ratio*170),Math.floor(h_ratio*0));
 
@@ -48,15 +54,28 @@ function startGame() {
     myScore.text="SCORE:-";
     myexiler = new component(20*h_ratio+"px", "Consolas", "#92A", w_ratio*330, h_ratio*660);
     myexiler.text="GEMS:-";
+    enemies.push(new units(BT[2].width,BT[2].height,RT[2].image.src,300-tank_width/2,400-tank_height/2,"image",2));
+            
     interval = setInterval(main_game , 20);
     
 }
 
 function main_game() {
+if(RC.health<0)
+{
+    end_game();
+}
     update_all();
     draw_all();    
 }
 
+function end_game() {
+    clearInterval(interval);
+    draw_all();
+res = new component(30*h_ratio+"px", "Consolas", "#349", w_ratio*0, h_ratio*340);
+res.text=" Congratulation You destroyed enemy Castle .";
+res.update();
+}
 
 function component(width, height, color, x, y) {
     this.width = width;
@@ -104,6 +123,7 @@ if (BT[active_troop].cost>exiler) {
     }
     
     BC.update();
+    if (RC.health>0) 
     RC.update();
 
     if (active_troop!=50) {                                                                        //blue line
@@ -119,7 +139,7 @@ if (BT[active_troop].cost>exiler) {
     ctx.lineTo(canvas.width,Math.floor(h_ratio*80));
     ctx.strokeStyle="#FF0000";
     ctx.stroke();
-                                                                                                    // deploy line                                                                                        
+                                                                                                     // deploy line                                                                                        
     ctx.beginPath();    
     ctx.moveTo(0,Math.floor(h_ratio*630));
     ctx.lineTo(canvas.width,Math.floor(h_ratio*630));
@@ -131,11 +151,15 @@ if (BT[active_troop].cost>exiler) {
     }
 
     for (var i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].health<0)
+        {
+            enemies.splice(i,1);
+            continue;
+        } 
         enemies[i].update();
     }
 
     for (var i = 0; i < bullets.length; i++) {
-        bullets[i].move();
         bullets[i].update();
     }
 }
@@ -159,7 +183,8 @@ function castle(width, height, name, x, y) {
                 this.y,
                 this.width, this.height);
     }
-    this.health;
+    this.health=50000;
+    this.max_health=50000;
 }
 
 
@@ -179,10 +204,28 @@ function units(width, height, color, x, y, type,speciality) {
     this.cy = y + height/2;   
     this.update = function() {
         if (type == "image") {
-                ctx.drawImage(this.image, 
+
+                // save the unrotated context of the canvas so we can restore it later
+    // the alternative is to untranslate & unrotate after drawing
+    ctx.save();
+
+    // move to the center of the canvas
+    ctx.translate(this.cx,this.cy);
+
+    // rotate the canvas to the specified degrees
+    ctx.rotate(-1*(this.angle-90)*Math.PI/180);
+
+    // draw the image
+    // since the context is rotated, the image will be rotated also
+    ctx.drawImage(this.image,-this.width/2,-this.height/2,this.width,this.height);
+
+    // we’re done with the rotating so restore the unrotated context
+    ctx.restore();
+                
+                /*ctx.drawImage(this.image, 
                 this.x, 
                 this.y,
-                this.width, this.height);
+                this.width, this.height);*/
         } 
         else if (this.type == "text") {
             ctx.font = this.width + " " + this.height;
@@ -201,8 +244,8 @@ function units(width, height, color, x, y, type,speciality) {
         this.attack=30;
         this.defense=10;
         this.speed=0.8*h_ratio;
-        this.max_health=30;
-        this.health=30;
+        this.max_health=3000;
+        this.health=3000;
         this.range=70;
         this.type=1;
         this.rotational_speed=2;
@@ -214,9 +257,9 @@ function units(width, height, color, x, y, type,speciality) {
         this.attack=10;
         this.defense=20;
         this.speed=0.5*h_ratio;
-        this.max_health=50;
+        this.max_health=7000;
         this.range=100;
-        this.health=50;
+        this.health=5000;
         this.type=2;
         this.rotational_speed=2;
         this.cost=2;
@@ -227,9 +270,9 @@ function units(width, height, color, x, y, type,speciality) {
         this.attack=10;
         this.defense=10;
         this.speed=1.5*h_ratio;
-        this.health=50;
-        this.max_health=50;
-        this.range=50;
+        this.health=5000;
+        this.max_health=5000;
+        this.range=100;
         this.type=4;
         this.rotational_speed=4;
         this.cost=1;
@@ -240,8 +283,8 @@ function units(width, height, color, x, y, type,speciality) {
         this.attack=15;
         this.defense=10;
         this.speed=0.8*h_ratio;
-        this.health=40;
-        this.max_health=40;
+        this.health=4000;
+        this.max_health=4000;
         this.range=60;
         this.type=4;
         this.rotational_speed=2;
@@ -256,23 +299,23 @@ function bullet(inx, iny, fnx, fny, len,ang,color,source,destination,type,user) 
     this.iny = iny;
     this.fnx = fnx;
     this.fny = fny;
-    this.len = len;
+    this.len = 3*w_ratio;
     this.color = color;    
     this.angle=ang;
     this.update = function() {
         ctx.beginPath();
         ctx.moveTo(inx,iny);
-        ctx.lineTo(len*Math.cos(ang*Math.PI/180)+inx,len*Math.sin(ang*Math.PI/180)+iny);
+        ctx.lineTo(len*Math.cos(ang*Math.PI/180)+inx,len*Math.sin(ang*Math.PI/180)*-1+iny);
         ctx.strokeStyle=color;
         ctx.stroke();    
     }
-    this.speed=3;
+    this.speed=1;
     this.type=type
     this.source=source;
     this.destination=destination;
     this.move= function() {
-        this.inx+=this.speed*Math.cos(this.angle*180/Math.PI);
-        this.iny+=this.speed*Math.sin(this.angle*180/Math.PI);  
+        this.inx+=this.speed*Math.cos(this.angle*Math.PI/180)*w_ratio;
+        this.iny-=this.speed*Math.sin(this.angle*Math.PI/180)*h_ratio;  
     }
 }
 
@@ -400,6 +443,9 @@ function handleStart(evt) {
 
 function update_all()
 {
+
+//console.log(enemies[0].health);
+
 /*    //var l=50,ka=0,ke=0;
     for (var i = allies.length - 1; i >= 0; i--) {
         var l=allies[i].range,ka=-1,ke=-1;
@@ -444,10 +490,10 @@ for (var i = allies.length - 1; i >= 0; i--) {
             }
         }
     if (l!=-1) {
-        attack_enemy(i,j);
+        attack_enemy(i,l);
     }
     else if (Math.pow(Math.pow(RC.cx-allies[i].cx,2)+Math.pow(RC.cy-allies[i].cy,2),0.5)<allies[i].range||allies[i].y<Math.floor(h_ratio*80)) {
-            
+        //    console.log("H1");
         attack_castle(i);
     }
     else 
@@ -456,35 +502,55 @@ for (var i = allies.length - 1; i >= 0; i--) {
         
 
     }   
-}
+}//+bullets[0].len*Math.cos(bullets[0].ang)-enemies[bullets[0].destination].cx)<tank_width
+
+//console.log(bullets[0].inx);
+    if(bullets.length)
+        console.log(bullets.length);
+//    console.log(Math.abs(bullets[0].inx));
 
 for (var i = 0; i < bullets.length; i++) {
     bullets[i].move();
     if (bullets[i].destination==-1) {
         if (bullets[i].user==1) {
-            if(Math.abs(bullets[i].x-RC.cx)<RC.width)
-                RC.health-=allies[bullets[i].type].attack;
+            if(Math.abs(bullets[i].inx-RC.cx)<RC.width)
+                RC.health-=BT[bullets[i].type].attack;
         }
         else {
-            if(Math.abs(bullets[i].x-BC.cx)<BC.width)
-                BC.health-=allies[bullets[i].type].attack;   
+            if(Math.abs(bullets[i].inx-BC.cx)<BC.width)
+                BC.health-=BT[bullets[i].type].attack;   
         }
     }
         else if (bullets[i].user==1){ 
-        if(Math.abs(bullets[i].inx+bullets[i].len*Math.cos(bullets[i].ang)-enemies[bullets[i].destination].cx)<tank_width) {
-        if(allies[bullets[i].type].attack-enemies[bullets[i].destination].defense>0)
-        enemies[bullets[i].destination].health-=allies[bullets[i].type].attack-enemies[bullets[i].destination].defense;
-        else
-        enemies[bullets[i].destination].health-=5;
+        //if(Math.abs(bullets[i].inx+bullets[i].len*Math.cos(bullets[i].ang)-enemies[bullets[i].destination].cx)<tank_width) 
+        {
+//            console.log(enemies[0].health);
+        if(BT[bullets[i].type].attack-enemies[bullets[i].destination].defense>0)
+        {
+            enemies[bullets[i].destination].health-=BT[bullets[i].type].attack-enemies[bullets[i].destination].defense;
+        }
+        else{
+        enemies[bullets[i].destination].health-=20;
+        //console.log(enemies[bullets[i].destination].health);
+        }
         bullets.splice(i,1);
         }
+        //console.log(enemies[bullets[i].destination].health);
+//console.log(Math.abs(bullets[i].inx+bullets[i].len*Math.cos(bullets[i].ang)-enemies[bullets[i].destination].cx)<tank_width);
+            
+
+    
     }
     else if(Math.abs(bullets[i].inx+bullets[i].len*Math.cos(bullets[i].ang)-allies[bullets[i].destination].cx)<tank_width) {
-        if(enemies[bullets[i].type].attack-allies[bullets[i].destination].defense>0)
-        allies[bullets[i].destination].health-=allies[bullets[i].type].attack-enemies[bullets[i].destination].defense;
+        if(BC[bullets[i].type].attack-allies[bullets[i].destination].defense>0)
+        allies[bullets[i].destination].health-=BT[bullets[i].type].attack-enemies[bullets[i].destination].defense;
         else
         allies[bullets[i].destination].health-=5;
         bullets.splice(i,1);
+        }
+        if(i<bullets.length)
+        if ((bullets[i].inx>canvas.width||bullets[i].inx<0)||(bullets[i].iny>canvas.length||bullets[i].iny<0)) {
+            bullets.splice(i,1);
         }
     }    
 }
@@ -496,37 +562,48 @@ function move_on(i) {
         allies[i].cy-=allies[i].speed;
     }
     else if (allies[i].angle-90>0) {
-        allies[i].angle-=allies[i].rotational_speed;
+        allies[i].angle-=allies[i].rotational_speed/10;
     }
     else {
-        allies[i].angle+=allies[i].rotational_speed;
+        allies[i].angle+=allies[i].rotational_speed/10;
     }
 }
 
 function attack_enemy(i,j) {
+    
+
     var q;
-    if (Math.abs(allies[i].cx-enemies[j].cx)==0) {
+    if (Math.abs(allies[i].cx-enemies[j].cx)<4) {
         if (allies[i].angle<94&&allies[i].angle>86) 
         {
+            if(frameno%10==0)
             bullets.push(new bullet(allies[i].cx,allies[i].cy,enemies[j].cx,enemies[j].cy,sp,allies[i].angle,"#345",i,j,allies[i].sp,1));
         }
     }
     else{
-
         q=Math.atan((allies[i].cy-enemies[j].cy)/(allies[i].cx-enemies[j].cx))*180/3.1415926;
+
         if (q>0) {
+
             if ((allies[i].cx-enemies[j].cx)>0) {
-                q=270-q;
+           //     console.log("hel");
+                q=180-q;
             }
+            else
+                q=360-q;
         }
         else{
             if(((allies[i].cx-enemies[j].cx)>0)) {
-                q=180+q;
+                q=270+q;
             }
+            else
+                q=-q;
         }
-        
-        if (Math.abs(q-allies[i].angle)<allies[i].rotational_speed) {
+//            console.log((q));
+        if (Math.abs(q-allies[i].angle)<=allies[i].rotational_speed) {
+            if(frameno%10==0)
             bullets.push(new bullet(allies[i].cx,allies[i].cy,enemies[j].cx,enemies[j].cy,sp,allies[i].angle,"#345",i,j,allies[i].sp,1));
+//            console.log("hi");
         }
         else if (q>allies[i].angle) {
             allies[i].angle+=allies[i].rotational_speed;
@@ -542,31 +619,42 @@ function attack_castle(i) {
     var q,w,e,r;
     if (Math.abs(allies[i].cx-RC.cx)<allies[i].rotational_speed) {
         {
+
+            if (frameno%10==0) 
             bullets.push(new bullet(allies[i].cx,allies[i].cy,RC.cx,RC.cy,sp,allies[i].angle,"#345",i,-1,allies[i].sp,1));
         }
     }
     else{
 
         q=Math.atan((allies[i].cy-RC.cy)/(allies[i].cx-RC.cx))*180/3.1415926;
+        //console.log((allies[i].cx-RC.cx));
         if (q>0) {
+
             if ((allies[i].cx-RC.cx)>0) {
-                q=270-q;
+           //     console.log("hel");
+                q=180-q;
             }
+            else
+                q=360-q;
         }
         else{
             if(((allies[i].cx-RC.cx)>0)) {
-                q=180+q;
+                q=270+q;
             }
+            else
+                q=-q;
         }
         
         if (Math.abs(q-allies[i].angle)<allies[i].rotational_speed) {
-            bullets.push(new bullet(allies[i].cx,allies[i].cy,RC.cx,RC.cy,sp,allies[i].angle,"#345",i,-1,allies[i].sp,1));
+            if (frameno%10==0) 
+            bullets.push(new bullet(allies[i].cx,allies[i].cy,RC.cx,RC.cy,sp*6,allies[i].angle,"#345",i,-1,allies[i].sp,1));
         }
         else if (q>allies[i].angle) {
-            allies[i].angle+=allies[i].rotational_speed;
+            allies[i].angle+=allies[i].rotational_speed/10;
         }
         else {
-            allies[i].angle-=allies[i].rotational_speed;
+            allies[i].angle-=allies[i].rotational_speed/10;
         }
+//        console.log(allies[i].angle);
     }
 }
