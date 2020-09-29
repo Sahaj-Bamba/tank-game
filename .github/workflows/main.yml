@@ -23,6 +23,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         azcliversion: 2.0.72
-        inlineScript: |
-          az account show
-          az storage -h
+        inlineScript: az vm run-command invoke -g vpn -n sahaj --command-id RunShellScript --scripts "cd /var/www/tank-game/ && git pull"
